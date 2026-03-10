@@ -110,6 +110,36 @@
             gap: 8px;
         }
 
+        .header-actions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .icon-btn {
+            background: #f3f4f6;
+            color: #666;
+            border: none;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            font-size: 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .icon-btn:hover {
+            background: #e5e7eb;
+            transform: scale(1.05);
+        }
+
+        .icon-btn:active {
+            transform: scale(0.95);
+        }
+
         .add-btn {
             background: #667eea;
             color: white;
@@ -327,7 +357,7 @@
             position: absolute;
             left: 15px;
             top: 50%;
-            transform: translateY(-50%);
+                       transform: translateY(-50%);
             color: #666;
             font-weight: bold;
         }
@@ -393,6 +423,7 @@
             padding: 12px 0;
             border-bottom: 1px solid #f3f4f6;
             animation: slideIn 0.3s ease;
+            position: relative;
         }
 
         @keyframes slideIn {
@@ -402,6 +433,7 @@
 
         .record-info {
             flex: 1;
+            padding-right: 10px;
         }
 
         .record-title {
@@ -431,6 +463,32 @@
             font-weight: bold;
             color: #ef4444;
             font-size: 16px;
+            white-space: nowrap;
+        }
+
+        .record-delete-btn {
+            background: #fee2e2;
+            color: #ef4444;
+            border: none;
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            margin-left: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: all 0.2s;
+        }
+
+        .record-item:hover .record-delete-btn {
+            opacity: 1;
+        }
+
+        .record-delete-btn:active {
+            transform: scale(0.9);
         }
 
         .empty-state {
@@ -576,76 +634,73 @@
         .no-budget-tip .btn {
             margin-top: 15px;
         }
-    
-        /* 导出导入按钮 */
-        .data-actions {
-            display: flex;
-            gap: 10px;
-            padding: 0 15px 20px;
-        }
 
-        .data-action-btn {
-            flex: 1;
-            padding: 12px;
-            border: 2px solid #e5e7eb;
-            background: white;
-            border-radius: 10px;
-            font-size: 14px;
+        /* 导入导出弹窗特殊样式 */
+        .import-section {
+            margin: 20px 0;
+            padding: 20px;
+            background: #f9fafb;
+            border-radius: 12px;
+            border: 2px dashed #d1d5db;
+            text-align: center;
             cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
             transition: all 0.2s;
-            color: #666;
         }
 
-        .data-action-btn:hover {
-            border-color: #667eea;
-            color: #667eea;
-            background: #f8f7ff;
+        .import-section:hover {
+            background: #f3f4f6;
+            border-color: #9ca3af;
         }
 
-        .data-action-btn:active {
+        .import-section:active {
             transform: scale(0.98);
         }
 
-        /* 文件输入隐藏 */
+        .import-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+
+        .import-text {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .import-hint {
+            color: #999;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+
         #fileInput {
             display: none;
         }
 
-        /* 导入确认弹窗 */
-        .import-preview {
-            max-height: 300px;
-            overflow-y: auto;
-            margin: 15px 0;
-            padding: 15px;
-            background: #f9fafb;
+        .export-btn {
+            width: 100%;
+            padding: 14px;
+            background: #10b981;
+            color: white;
+            border: none;
             border-radius: 10px;
-        }
-
-        .import-stat {
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
             display: flex;
-            justify-content: space-between;
-            padding: 8px 0;
-            border-bottom: 1px solid #e5e7eb;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s;
         }
 
-        .import-stat:last-child {
-            border-bottom: none;
+        .export-btn:hover {
+            background: #059669;
         }
 
-        .warning-text {
-            color: #f59e0b;
-            font-size: 13px;
-            margin-top: 10px;
-            padding: 10px;
-            background: #fffbeb;
-            border-radius: 8px;
-            border-left: 3px solid #f59e0b;
+        .export-btn:active {
+            transform: scale(0.98);
         }
-</style>
+    </style>
 </head>
 <body>
     <div class="container">
@@ -678,7 +733,10 @@
         <div class="section">
             <div class="section-header">
                 <div class="section-title">📊 我的预算</div>
-                <button class="add-btn" onclick="openBudgetModal()">+</button>
+                <div class="header-actions">
+                    <button class="icon-btn" onclick="openDataModal()" title="导入/导出">💾</button>
+                    <button class="add-btn" onclick="openBudgetModal()">+</button>
+                </div>
             </div>
             <div id="budgetList" class="budget-list">
                 <!-- 动态生成 -->
@@ -733,19 +791,6 @@
         <!-- 无预算提示 -->
         <div id="noBudgetTip" class="no-budget-tip">
             <div class="empty-icon">📊</div>
-        <!-- 数据管理 -->
-        <div class="data-actions">
-            <button class="data-action-btn" onclick="exportData()">
-                <span>📤</span>
-                <span>导出数据</span>
-            </button>
-            <button class="data-action-btn" onclick="document.getElementById('fileInput').click()">
-                <span>📥</span>
-                <span>导入数据</span>
-            </button>
-            <input type="file" id="fileInput" accept=".json" onchange="importData(this)">
-        </div>
-
             <div>还没有设置预算</div>
             <div style="font-size: 13px; margin-top: 5px;">点击右上角 + 号创建你的第一个预算</div>
         </div>
@@ -799,6 +844,41 @@
             <div class="modal-actions">
                 <button class="btn btn-secondary" onclick="closeBudgetModal()">取消</button>
                 <button class="btn btn-primary" onclick="saveBudget()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 数据导入导出弹窗 -->
+    <div class="modal" id="dataModal">
+        <div class="modal-content">
+            <div class="modal-header">💾 数据备份</div>
+            
+            <div style="margin-bottom: 20px;">
+                <div style="font-size: 14px; color: #666; margin-bottom: 10px; font-weight: 500;">导出数据</div>
+                <button class="export-btn" onclick="exportData()">
+                    <span>📥</span>
+                    <span>导出到文件</span>
+                </button>
+                <div style="font-size: 12px; color: #999; margin-top: 8px; text-align: center;">
+                    将备份文件保存到手机，防止数据丢失
+                </div>
+            </div>
+
+            <div style="margin-top: 25px;">
+                <div style="font-size: 14px; color: #666; margin-bottom: 10px; font-weight: 500;">导入数据</div>
+                <div class="import-section" onclick="document.getElementById('fileInput').click()">
+                    <div class="import-icon">📤</div>
+                    <div class="import-text">点击选择备份文件</div>
+                    <div class="import-hint">支持 .json 格式文件</div>
+                </div>
+                <input type="file" id="fileInput" accept=".json,application/json" onchange="importData(this)">
+                <div style="font-size: 12px; color: #999; margin-top: 8px; text-align: center;">
+                    ⚠️ 导入将覆盖当前所有数据，请谨慎操作
+                </div>
+            </div>
+            
+            <div class="modal-actions" style="margin-top: 25px;">
+                <button class="btn btn-secondary" onclick="closeDataModal()">关闭</button>
             </div>
         </div>
     </div>
@@ -1098,7 +1178,7 @@
                     el.classList.toggle('selected', el.textContent === budget.icon);
                 });
                 document.querySelectorAll('.color-option').forEach(el => {
-                    el.classList.toggle('selected', el.style.background === budget.color);
+                    el.classList.toggle('selected', rgbToHex(el.style.background) === budget.color);
                 });
             } else {
                 // 新建模式
@@ -1195,6 +1275,101 @@
             showToast('预算已删除');
         }
 
+        // ==================== 数据导入导出 ====================
+        
+        function openDataModal() {
+            document.getElementById('dataModal').classList.add('show');
+        }
+
+        function closeDataModal() {
+            document.getElementById('dataModal').classList.remove('show');
+            // 清空文件输入
+            document.getElementById('fileInput').value = '';
+        }
+
+        function exportData() {
+            const data = getData();
+            const exportObj = {
+                version: '1.0',
+                exportTime: new Date().toISOString(),
+                data: data
+            };
+            
+            const jsonStr = JSON.stringify(exportObj, null, 2);
+            const blob = new Blob([jsonStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `记账本备份_${getDateInfo().dateKey}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            showToast('导出成功');
+            closeDataModal();
+        }
+
+        function importData(input) {
+            const file = input.files[0];
+            if (!file) return;
+            
+            // 检查文件类型
+            const validTypes = ['application/json', '.json', 'text/plain', ''];
+            const fileName = file.name.toLowerCase();
+            
+            if (!fileName.endsWith('.json') && !validTypes.includes(file.type)) {
+                showToast('❌ 不支持的文件格式，请选择 .json 文件');
+                input.value = '';
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const content = e.target.result;
+                    const imported = JSON.parse(content);
+                    
+                    // 验证数据结构
+                    if (!imported.data || typeof imported.data !== 'object') {
+                        throw new Error('无效的数据格式');
+                    }
+                    
+                    if (!Array.isArray(imported.data.budgets) || !Array.isArray(imported.data.records)) {
+                        throw new Error('数据格式错误：缺少 budgets 或 records');
+                    }
+                    
+                    // 确认导入
+                    if (!confirm(`确定要导入备份吗？\n\n这将覆盖当前所有数据！\n\n预算数量: ${imported.data.budgets.length}\n记录数量: ${imported.data.records.length}`)) {
+                        input.value = '';
+                        return;
+                    }
+                    
+                    // 保存数据
+                    saveData(imported.data);
+                    
+                    // 刷新界面
+                    renderBudgetList();
+                    updateOverview();
+                    
+                    showToast('✅ 导入成功');
+                    closeDataModal();
+                    
+                } catch (err) {
+                    showToast('❌ 导入失败：' + err.message);
+                    input.value = '';
+                }
+            };
+            
+            reader.onerror = function() {
+                showToast('❌ 文件读取失败');
+                input.value = '';
+            };
+            
+            reader.readAsText(file);
+        }
+
         // ==================== 记账功能 ====================
         
         function addRecord() {
@@ -1235,6 +1410,19 @@
             renderRecordsList();
             updateOverview();
             showToast('记账成功');
+        }
+
+        function deleteRecord(recordId) {
+            if (!confirm('确定要删除这条支出记录吗？')) return;
+            
+            const data = getData();
+            data.records = data.records.filter(r => r.id !== recordId);
+            saveData(data);
+            
+            renderBudgetList();
+            renderRecordsList();
+            updateOverview();
+            showToast('记录已删除');
         }
 
         function renderRecordsList() {
@@ -1278,7 +1466,10 @@
                         </div>
                         <div class="record-time">${r.timeStr}</div>
                     </div>
-                    <div class="record-amount">-¥${r.amount.toFixed(2)}</div>
+                    <div style="display: flex; align-items: center;">
+                        <div class="record-amount">-¥${r.amount.toFixed(2)}</div>
+                        <button class="record-delete-btn" onclick="deleteRecord('${r.id}')" title="删除">🗑️</button>
+                    </div>
                 </div>
             `).join('');
         }
@@ -1287,6 +1478,16 @@
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
+        }
+
+        function rgbToHex(rgb) {
+            if (!rgb || rgb.startsWith('#')) return rgb;
+            const result = rgb.match(/\d+/g);
+            if (!result) return rgb;
+            return '#' + result.map(x => {
+                const hex = parseInt(x).toString(16);
+                return hex.length === 1 ? '0' + hex : hex;
+            }).join('');
         }
 
         function showToast(msg) {
@@ -1301,201 +1502,12 @@
             if (e.target === this) closeBudgetModal();
         });
 
-        // 初始化
-        
-        // ==================== 数据导出导入 ====================
-
-        function exportData() {
-            const data = getData();
-            const dateInfo = getDateInfo();
-
-            const exportObj = {
-                version: '1.0',
-                exportTime: dateInfo.timestamp,
-                exportDate: dateInfo.fullDate,
-                appName: '多预算记账本',
-                data: data
-            };
-
-            const jsonStr = JSON.stringify(exportObj, null, 2);
-            const blob = new Blob([jsonStr], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `记账本备份_${dateInfo.year}${dateInfo.month}${dateInfo.date}.json`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-
-            showToast('数据已导出');
-        }
-
-        function importData(input) {
-            const file = input.files[0];
-            if (!file) return;
-
-            // 重置 input 以便可以重复选择同一文件
-            input.value = '';
-
-            // 检查文件类型
-            if (!file.name.toLowerCase().endsWith('.json')) {
-                showToast('❌ 请上传 .json 格式的文件');
-                return;
-            }
-
-            const reader = new FileReader();
-
-            reader.onload = function(e) {
-                try {
-                    const content = e.target.result;
-                    const imported = JSON.parse(content);
-
-                    // 验证文件格式
-                    if (!validateImportData(imported)) {
-                        showToast('❌ 文件格式错误，无法导入');
-                        return;
-                    }
-
-                    // 显示导入确认弹窗
-                    showImportConfirm(imported);
-
-                } catch (err) {
-                    showToast('❌ 文件解析失败，请检查文件是否损坏');
-                    console.error('Import error:', err);
-                }
-            };
-
-            reader.onerror = function() {
-                showToast('❌ 文件读取失败');
-            };
-
-            reader.readAsText(file);
-        }
-
-        function validateImportData(data) {
-            // 检查基本结构
-            if (!data || typeof data !== 'object') return false;
-
-            // 检查是否有 data 字段
-            if (!data.data || typeof data.data !== 'object') return false;
-
-            const innerData = data.data;
-
-            // 检查 budgets 数组
-            if (!Array.isArray(innerData.budgets)) return false;
-
-            // 检查 records 数组
-            if (!Array.isArray(innerData.records)) return false;
-
-            // 验证预算项结构
-            for (let budget of innerData.budgets) {
-                if (!budget.id || !budget.name || typeof budget.amount !== 'number') {
-                    return false;
-                }
-            }
-
-            // 验证记录项结构
-            for (let record of innerData.records) {
-                if (!record.id || !record.budgetId || typeof record.amount !== 'number') {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
-        function showImportConfirm(imported) {
-            const data = imported.data;
-            const date = imported.exportDate || '未知时间';
-
-            // 创建确认弹窗内容
-            const modalHtml = `
-                <div class="modal show" id="importConfirmModal" style="z-index: 3000;">
-                    <div class="modal-content">
-                        <div class="modal-header">📥 确认导入数据</div>
-
-                        <div class="import-preview">
-                            <div class="import-stat">
-                                <span>备份来源</span>
-                                <span style="color: #667eea; font-weight: 600;">${escapeHtml(imported.appName || '多预算记账本')}</span>
-                            </div>
-                            <div class="import-stat">
-                                <span>备份时间</span>
-                                <span>${escapeHtml(date)}</span>
-                            </div>
-                            <div class="import-stat">
-                                <span>预算数量</span>
-                                <span style="font-weight: 600;">${data.budgets.length} 个</span>
-                            </div>
-                            <div class="import-stat">
-                                <span>记账记录</span>
-                                <span style="font-weight: 600;">${data.records.length} 条</span>
-                            </div>
-                        </div>
-
-                        <div class="warning-text">
-                            ⚠️ 导入将覆盖当前所有数据，此操作不可撤销。建议先导出备份当前数据。
-                        </div>
-
-                        <div class="modal-actions">
-                            <button class="btn btn-secondary" onclick="closeImportModal()">取消</button>
-                            <button class="btn btn-primary" onclick="confirmImport()">确认导入</button>
-                        </div>
-                    </div>
-                </div>
-            `;
-
-            // 添加到 body
-            const div = document.createElement('div');
-            div.innerHTML = modalHtml;
-            document.body.appendChild(div.firstElementChild);
-
-            // 保存导入数据到临时变量
-            window._pendingImport = imported;
-        }
-
-        function closeImportModal() {
-            const modal = document.getElementById('importConfirmModal');
-            if (modal) {
-                modal.remove();
-            }
-            window._pendingImport = null;
-        }
-
-        function confirmImport() {
-            if (!window._pendingImport) return;
-
-            const imported = window._pendingImport;
-            const newData = imported.data;
-
-            // 确保数据结构完整
-            if (!newData.selectedBudgetId && newData.budgets.length > 0) {
-                newData.selectedBudgetId = newData.budgets[0].id;
-            }
-
-            // 保存数据
-            saveData(newData);
-
-            // 关闭弹窗
-            closeImportModal();
-
-            // 刷新界面
-            renderBudgetList();
-            updateOverview();
-
-            showToast('✅ 数据导入成功');
-        }
-
-        // 点击导入弹窗外部关闭
-        document.addEventListener('click', function(e) {
-            const modal = document.getElementById('importConfirmModal');
-            if (modal && e.target === modal) {
-                closeImportModal();
-            }
+        document.getElementById('dataModal').addEventListener('click', function(e) {
+            if (e.target === this) closeDataModal();
         });
-window.onload = init;
+
+        // 初始化
+        window.onload = init;
     </script>
 </body>
 </html>

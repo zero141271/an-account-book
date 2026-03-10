@@ -893,14 +893,22 @@
         const COLORS = ['#667eea', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
 
         function getData() {
-            const data = localStorage.getItem('multiBudgetData');
-            if (data) return JSON.parse(data);
-            return {
-                budgets: [],      // 预算列表
-                records: [],      // 所有记录
-                selectedBudgetId: null  // 当前选中的预算ID
-            };
+        const data = localStorage.getItem('multiBudgetData');
+        if (data) {
+            const parsed = JSON.parse(data);
+            // 兼容旧数据：给旧预算添加新字段
+            parsed.budgets.forEach(b => {
+                if (b.carryOver === undefined) b.carryOver = 0;
+                if (b.todayLimit === undefined) b.todayLimit = b.amount;
+            });
+            return parsed;
         }
+        return {
+            budgets: [],
+            records: [],
+            selectedBudgetId: null
+        };
+    }
 
         function saveData(data) {
             localStorage.setItem('multiBudgetData', JSON.stringify(data));
@@ -930,34 +938,60 @@
         // ==================== 周期重置判断 ====================
         
         function checkBudgetReset(budget) {
-            const now = getDateInfo();
-            const lastCheck = budget.lastCheck || '';
-            
-            let needReset = false;
-            let periodKey = '';
-            
-            switch(budget.period) {
-                case 'daily':
-                    periodKey = now.dateKey;
-                    needReset = lastCheck !== now.dateKey;
-                    break;
-                case 'monthly':
-                    periodKey = now.monthKey;
-                    needReset = !lastCheck.startsWith(now.monthKey);
-                    break;
-                case 'yearly':
-                    periodKey = now.yearKey;
-                    needReset = !lastCheck.startsWith(now.yearKey);
-                    break;
-            }
-            
-            if (needReset) {
-                budget.lastCheck = periodKey;
-                budget.spent = 0; // 重置已支出金额
-            }
-            
-            return needReset;
+        const now = getDateInfo();
+        const lastCheck = budget.lastCheck || '';
+        
+        let needReset = false;
+        let periodKey = '';
+        
+        switch(budget.period) {
+            case 'daily':
+                periodKey = now.dateKey;
+                needReset = lastCheck !== now.dateKey;
+                
+                if (needReset) {
+                    // 计算昨日剩余
+                    // 1. 计算昨日结束时的净剩余（可能是负数，即债务）
+                    const remaining = (budget.todayLimit || budget.amount) - budget.spent;
+
+                    // 2. 直接继承该结果，不再使用 Math.max(0, ...) 过滤负数
+                    budget.carryOver = remaining;
+
+                    // 3. 计算今日额度：原始预算 + 继承的金额（加负数等于扣除）
+                    budget.todayLimit = budget.amount + budget.carryOver;
+                    budget.spent = 0;
+                    budget.lastCheck = periodKey;
+                }
+                break;
+                
+            case 'monthly':
+                periodKey = now.monthKey;
+                needReset = !lastCheck.startsWith(now.monthKey);
+                
+                if (needReset) {
+                    // 每月1号：全部清零，包括继承金额
+                    budget.spent = 0;
+                    budget.carryOver = 0;
+                    budget.todayLimit = budget.amount;
+                    budget.lastCheck = periodKey;
+                }
+                break;
+                
+            case 'yearly':
+                periodKey = now.yearKey;
+                needReset = !lastCheck.startsWith(now.yearKey);
+                
+                if (needReset) {
+                    budget.spent = 0;
+                    budget.carryOver = 0;
+                    budget.todayLimit = budget.amount;
+                    budget.lastCheck = periodKey;
+                }
+                break;
         }
+        
+        return needReset;
+    }
 
         // ==================== 界面渲染 ====================
         
@@ -1039,17 +1073,28 @@
             const dateInfo = getDateInfo();
             
             container.innerHTML = data.budgets.map(budget => {
-                // 计算当前周期内该预算的支出
-                let spent = 0;
-                data.records.forEach(r => {
-                    if (r.budgetId === budget.id && isInPeriod(r, budget.period, dateInfo)) {
-                        spent += r.amount;
-                    }
-                });
-                
-                budget.spent = spent;
-                const remaining = budget.amount - spent;
-                const percent = budget.amount > 0 ? (spent / budget.amount * 100) : 0;
+            // 计算当前周期内该预算的支出
+            let spent = 0;
+            data.records.forEach(r => {
+                if (r.budgetId === budget.id && isInPeriod(r, budget.period, dateInfo)) {
+                    spent += r.amount;
+                }
+            });
+            
+            budget.spent = spent;
+            
+            // 根据周期类型计算剩余
+            let remaining, totalLimit;
+            if (budget.period === 'daily') {
+                // 每日预算：使用今日可用额度（含继承）
+                totalLimit = budget.todayLimit || budget.amount;
+                remaining = totalLimit - spent;
+            } else {
+                // 月/年预算：使用原始预算
+                totalLimit = budget.amount;
+                remaining = budget.amount - spent;
+            }
+                const percent = totalLimit > 0 ? (spent / totalLimit * 100) : 0;
                 
                 let progressClass = 'progress-normal';
                 if (percent > 80) progressClass = 'progress-warning';
@@ -1071,21 +1116,23 @@
                             <span class="budget-period">${getPeriodText(budget.period)}</span>
                         </div>
                         
-                        <div class="budget-amounts">
-                            <span class="remaining ${remaining >= 0 ? 'positive' : 'negative'}">
-                                ¥${remaining.toFixed(2)}
-                            </span>
-                            <span class="total">/ ¥${budget.amount.toFixed(2)}</span>
-                        </div>
+                                <div class="budget-amounts">
+                                <span class="remaining ${remaining >= 0 ? 'positive' : 'negative'}">
+                                    ¥${remaining.toFixed(2)}
+                                </span>
+                                <span class="total">/ ¥${totalLimit.toFixed(2)}</span>
+                                ${budget.period === 'daily' && budget.carryOver > 0 ? 
+                                    `<span style="font-size: 11px; color: #10b981; margin-left: 5px;">(含昨日¥${budget.carryOver.toFixed(0)})</span>` : ''}
+                            </div>
                         
                         <div class="progress-bar">
                             <div class="progress-fill ${progressClass}" style="width: ${Math.min(percent, 100)}%"></div>
                         </div>
                         
-                        <div style="font-size: 12px; color: #999; display: flex; justify-content: space-between;">
-                            <span>已用 ${percent.toFixed(1)}%</span>
-                            <span>剩余 ¥${remaining.toFixed(2)}</span>
-                        </div>
+                                <div style="font-size: 12px; color: #999; display: flex; justify-content: space-between;">
+                                <span>已用 ${percent.toFixed(1)}%</span>
+                                <span>剩余 ¥${remaining.toFixed(2)}${budget.period === 'daily' && budget.carryOver > 0 ? ' (含继承)' : ''}</span>
+                            </div>
                         
                         ${isSelected ? `
                             <div class="budget-actions">
@@ -1138,8 +1185,14 @@
             
             let totalBudget = 0, totalSpent = 0;
             
-            data.budgets.forEach(budget => {
-                totalBudget += budget.amount;
+                data.budgets.forEach(budget => {
+                // 总预算按实际可用额度计算
+                if (budget.period === 'daily') {
+                    totalBudget += (budget.todayLimit || budget.amount);
+                } else {
+                    totalBudget += budget.amount;
+                }
+                
                 // 计算该预算在当前周期的支出
                 data.records.forEach(r => {
                     if (r.budgetId === budget.id && isInPeriod(r, budget.period, dateInfo)) {
@@ -1224,25 +1277,30 @@
                 // 编辑
                 const budget = data.budgets.find(b => b.id === id);
                 if (budget) {
-                    budget.name = name;
-                    budget.amount = amount;
-                    budget.period = period;
-                    budget.icon = icon;
-                    budget.color = color;
+                budget.name = name;
+                budget.amount = amount;
+                budget.period = period;
+                budget.icon = icon;
+                budget.color = color;
+                // 如果改了金额，重置继承逻辑
+                if (budget.period === 'daily') {
+                    budget.todayLimit = amount + (budget.carryOver || 0);
                 }
             } else {
                 // 新建
                 const newBudget = {
-                    id: Date.now().toString(),
-                    name,
-                    amount,
-                    period,
-                    icon,
-                    color,
-                    createdAt: dateInfo.dateKey,
-                    lastCheck: dateInfo.dateKey,
-                    spent: 0
-                };
+                id: Date.now().toString(),
+                name,
+                amount,
+                period,
+                icon,
+                color,
+                createdAt: dateInfo.dateKey,
+                lastCheck: dateInfo.dateKey,
+                spent: 0,
+                carryOver: 0,        // 新增：继承的剩余金额
+                todayLimit: amount   // 新增：今日实际可用额度
+            };
                 data.budgets.push(newBudget);
                 data.selectedBudgetId = newBudget.id; // 自动选中新预算
             }

@@ -268,32 +268,50 @@
             inset: 0;
             background: rgba(74, 74, 72, 0.6);
             backdrop-filter: blur(4px);
+            /* MODIFIED: 让弹窗内容在垂直方向居中 */
+            align-items: center; 
+            justify-content: center;
+            padding: 1rem; /* 在屏幕边缘留出一些空间 */
         }
         .modal.show {
             display: flex;
         }
         .modal-content {
-            /* -- FIX: 替换 'composes: hand-drawn-card' -- */
             background-color: white;
             padding: 1.25rem;
             border: 2px solid var(--color-text);
             border-radius: 4px 10px 6px 8px / 8px 5px 9px 5px;
             box-shadow: 3px 3px 0px var(--color-text);
-            /* -- 原有样式 -- */
             width: 100%;
             max-width: 400px;
-            max-height: 90vh;
+            max-height: 90vh; /* 限制弹窗最大高度为视口的90% */
             animation: float-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+            /* MODIFIED: 关键修改 - 启用flex布局来控制内部结构 */
+            display: flex;
+            flex-direction: column;
         }
         .modal-header {
-            font-family: var(--font-hand); /* -- FIX: from 'composes: font-hand' -- */
+            font-family: var(--font-hand);
             font-size: 1.5rem;
             margin-bottom: 1.5rem;
             transform: rotate(-1deg);
+            flex-shrink: 0; /* 防止头部被压缩 */
+        }
+        /* ADDED: 新增modal-body样式，使其可滚动 */
+        .modal-body {
+            flex-grow: 1; /* 占据剩余空间 */
+            min-height: 0; /* flex布局中滚动的关键 */
+            overflow-y: auto; /* 当内容溢出时，显示垂直滚动条 */
+            margin: 0 -0.5rem; /* 抵消内边距，让滚动条不挤压内容 */
+            padding: 0 0.5rem;
+        }
+        /* ADDED: 新增modal-actions样式，包裹按钮 */
+        .modal-actions {
+            margin-top: 1.5rem;
+            flex-shrink: 0; /* 防止底部被压缩 */
         }
         .icon-option, .color-option {
             cursor: pointer;
-            /* -- FIX: from 'composes: hand-drawn-border' -- */
             border: 2px solid var(--color-text);
             border-radius: 4px 10px 6px 8px / 8px 5px 9px 5px;
         }
@@ -317,7 +335,6 @@
             opacity: 0;
             transition: all 0.3s;
             box-shadow: 4px 4px 10px rgba(0,0,0,0.2);
-            /* -- FIX: from 'composes: hand-drawn-border' -- */
             border: 2px solid var(--color-text);
             border-radius: 4px 10px 6px 8px / 8px 5px 9px 5px;
         }
@@ -432,14 +449,15 @@
         </div>
     </div>
 
-    <!-- 预算设置弹窗 (HTML结构修改) -->
-    <div class="modal items-center justify-center p-4" id="budgetModal">
-        <div class="modal-box">
-            <div class="modal-content">
-                <div class="modal-header" id="modalTitle">新建预算</div>
-                
-                <input type="hidden" id="editBudgetId">
-                
+    <!-- 预算设置弹窗 (MODIFIED: HTML结构调整) -->
+    <div class="modal" id="budgetModal">
+        <div class="modal-content">
+            <div class="modal-header" id="modalTitle">新建预算</div>
+            
+            <input type="hidden" id="editBudgetId">
+            
+            <!-- ADDED: modal-body包裹可滚动内容 -->
+            <div class="modal-body">
                 <div class="space-y-4">
                     <div class="input-group">
                         <label class="block font-semibold text-sm mb-1 ml-1 -rotate-1">预算名称</label>
@@ -475,8 +493,11 @@
                         <input type="hidden" id="selectedColor" value="#667eea">
                     </div>
                 </div>
-                
-                <div class="flex gap-3 mt-6">
+            </div>
+            
+            <!-- ADDED: modal-actions包裹底部按钮 -->
+            <div class="modal-actions">
+                <div class="flex gap-3">
                     <button class="hand-drawn-button btn-secondary w-full py-3" onclick="closeBudgetModal()">取消</button>
                     <button class="hand-drawn-button btn-highlight w-full py-3" onclick="saveBudget()">保存</button>
                 </div>
@@ -484,35 +505,39 @@
         </div>
     </div>
 
-    <!-- 数据导入导出弹窗 (HTML结构修改) -->
-    <div class="modal items-center justify-center p-4" id="dataModal">
-        <div class="modal-box">
-            <div class="modal-content">
-                <div class="modal-header">💾 数据备份</div>
-                
-                <div class="mb-6">
-                    <div class="font-semibold mb-2 -rotate-1">导出数据</div>
-                    <button class="hand-drawn-button bg-green-500 text-white w-full py-3 text-base flex items-center justify-center gap-2" onclick="exportData()">
-                        <span>📥</span>
-                        <span>导出到文件</span>
-                    </button>
-                    <div class="text-xs text-center opacity-70 mt-2">将备份文件保存到安全的地方，防止数据丢失。</div>
-                </div>
-
-                <div class="mt-6">
-                    <div class="font-semibold mb-2 -rotate-1">导入数据</div>
-                    <div class="hand-drawn-border border-dashed border-gray-400 text-center py-6 cursor-pointer transition-transform hover:scale-105" onclick="document.getElementById('fileInput').click()">
-                        <div class="text-4xl">📤</div>
-                        <div class="font-bold mt-1">点击选择备份文件</div>
-                        <div class="text-xs opacity-70">支持 .json 格式</div>
+    <!-- 数据导入导出弹窗 (MODIFIED: HTML结构调整) -->
+    <div class="modal" id="dataModal">
+        <div class="modal-content">
+            <div class="modal-header">💾 数据备份</div>
+            
+            <!-- ADDED: modal-body包裹可滚动内容 -->
+            <div class="modal-body">
+                <div class="space-y-6">
+                    <div>
+                        <div class="font-semibold mb-2 -rotate-1">导出数据</div>
+                        <button class="hand-drawn-button bg-green-500 text-white w-full py-3 text-base flex items-center justify-center gap-2" onclick="exportData()">
+                            <span>📥</span>
+                            <span>导出到文件</span>
+                        </button>
+                        <div class="text-xs text-center opacity-70 mt-2">将备份文件保存到安全的地方，防止数据丢失。</div>
                     </div>
-                    <input type="file" id="fileInput" class="hidden" accept=".json,application/json" onchange="importData(this)">
-                    <div class="text-xs text-center text-red-600 font-bold mt-2">⚠️ 导入将覆盖当前所有数据，请谨慎操作！</div>
+
+                    <div>
+                        <div class="font-semibold mb-2 -rotate-1">导入数据</div>
+                        <div class="hand-drawn-border border-dashed border-gray-400 text-center py-6 cursor-pointer transition-transform hover:scale-105" onclick="document.getElementById('fileInput').click()">
+                            <div class="text-4xl">📤</div>
+                            <div class="font-bold mt-1">点击选择备份文件</div>
+                            <div class="text-xs opacity-70">支持 .json 格式</div>
+                        </div>
+                        <input type="file" id="fileInput" class="hidden" accept=".json,application/json" onchange="importData(this)">
+                        <div class="text-xs text-center text-red-600 font-bold mt-2">⚠️ 导入将覆盖当前所有数据，请谨慎操作！</div>
+                    </div>
                 </div>
-                
-                <div class="mt-8">
-                    <button class="hand-drawn-button btn-secondary w-full py-3" onclick="closeDataModal()">关闭</button>
-                </div>
+            </div>
+            
+             <!-- ADDED: modal-actions包裹底部按钮 -->
+            <div class="modal-actions">
+                <button class="hand-drawn-button btn-secondary w-full py-3" onclick="closeDataModal()">关闭</button>
             </div>
         </div>
     </div>
@@ -662,7 +687,7 @@
         return hasAnyReset;
     }
 
-    // ==================== 初始化与渲染 (逻辑未修改，仅调整HTML生成以匹配新样式) ====================
+    // ==================== 初始化与渲染 (逻辑未修改) ====================
     
     function init() {
         updateDate();
@@ -825,28 +850,49 @@
         saveData(data);
         renderBudgetList();
     }
-
     function updateOverview() {
         const data = getData();
-        const dateInfo = getDateInfo();
+        const dateInfo = getDateInfo(); // 获取当前日期信息，例如 { year, month, date, monthKey, ... }
+        const dayOfMonth = dateInfo.date; // 获取今天是这个月的第几天
 
-        const todaySpent = data.records
-            .filter(r => r.dateKey === dateInfo.dateKey)
-            .reduce((sum, r) => sum + r.amount, 0);
-        
-        let todayAvailable = 0;
-        data.budgets.forEach(b => {
-            if (b.period === 'daily') {
-                todayAvailable += (b.todayLimit || b.amount);
+        // 1. 根据您的累积逻辑计算新的“总预算”
+        let totalBudget = 0;
+        data.budgets.forEach(budget => {
+            switch (budget.period) {
+                case 'monthly':
+                    // 月度预算，直接将其金额计入总预算
+                    totalBudget += budget.amount;
+                    break;
+                case 'daily':
+                    // 每日预算，金额乘以当月已过的天数
+                    totalBudget += budget.amount * dayOfMonth;
+                    break;
+                case 'yearly':
+                    // 年度预算，按月均摊（除以12）
+                    totalBudget += budget.amount / 12;
+                    break;
+                default:
+                    break;
             }
         });
-        
-        document.getElementById('totalBudget').textContent = '¥' + todayAvailable.toFixed(0);
-        document.getElementById('totalSpent').textContent = '¥' + todaySpent.toFixed(0);
-        document.getElementById('totalRemaining').textContent = '¥' + (todayAvailable - todaySpent).toFixed(0);
+
+        // 2. 计算当前月份到目前为止的总支出
+        const totalSpentThisMonth = data.records
+            .filter(r => r.dateKey.startsWith(dateInfo.monthKey)) // 筛选出本月的所有记录
+            .reduce((sum, r) => sum + r.amount, 0); // 将它们加总
+
+        // 3. 计算总剩余
+        const totalRemaining = totalBudget - totalSpentThisMonth;
+
+        // 4. 将计算结果更新到页面上
+        document.getElementById('totalBudget').textContent = '¥' + totalBudget.toFixed(0);
+        document.getElementById('totalSpent').textContent = '¥' + totalSpentThisMonth.toFixed(0);
+        document.getElementById('totalRemaining').textContent = '¥' + totalRemaining.toFixed(0);
     }
+
+
     
-    // ==================== 预算编辑 (未修改，完全兼容) ====================
+    // ==================== 预算编辑 (逻辑未修改) ====================
 
     function openBudgetModal(budgetId = null) {
         const modal = document.getElementById('budgetModal');
@@ -961,7 +1007,7 @@
         showToast('预算已删除');
     }
 
-    // ==================== 数据导入导出 (未修改，完全兼容) ====================
+    // ==================== 数据导入导出 (逻辑未修改) ====================
 
     function openDataModal() { document.getElementById('dataModal').classList.add('show'); }
     function closeDataModal() { document.getElementById('dataModal').classList.remove('show'); document.getElementById('fileInput').value = ''; }
@@ -1010,7 +1056,7 @@
         reader.readAsText(file);
     }
 
-    // ==================== 记账功能 (逻辑未修改，仅调整HTML生成以匹配新样式) ====================
+    // ==================== 记账功能 (逻辑未修改) ====================
 
     function addRecord() {
         const data = getData();
@@ -1122,7 +1168,7 @@
         `).join('');
     }
 
-    // ==================== 工具函数 (未修改，完全兼容) ====================
+    // ==================== 工具函数 (逻辑未修改) ====================
 
     function escapeHtml(text) {
         if (!text) return '';
@@ -1149,6 +1195,7 @@
         setTimeout(() => toast.classList.remove('show'), 2500);
     }
 
+    // 事件监听器修正，确保点击弹窗背景可以关闭
     document.getElementById('budgetModal').addEventListener('click', e => { 
         if (e.target.id === 'budgetModal') closeBudgetModal(); 
     });
